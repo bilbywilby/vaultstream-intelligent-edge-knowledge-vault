@@ -1,6 +1,6 @@
 # Cloudflare React Starter
 
-[cloudflarebutton]
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/bilbywilby/vaultstream-intelligent-edge-knowledge-vault)
 
 A production-ready starter template for building full-stack applications on Cloudflare Workers using React, TypeScript, Tailwind CSS, and shadcn/ui. Optimized for performance, scalability, and developer experience with Bun.
 
@@ -59,7 +59,7 @@ Customize `src/App.tsx` and components in `src/components/` to build your app.
 
 Deploy instantly to Cloudflare Workers with zero configuration.
 
-[cloudflarebutton]
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/bilbywilby/vaultstream-intelligent-edge-knowledge-vault)
 
 ### Manual Deployment with Wrangler
 
