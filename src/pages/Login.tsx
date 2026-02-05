@@ -52,8 +52,8 @@ export default function Login() {
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Identity</label>
-                <Input
-                  value={username}
+                <Input 
+                  value={username} 
                   onChange={(e) => setUsername(e.target.value)}
                   className="bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-600 h-12 rounded-xl focus:ring-primary"
                   placeholder="Username"
@@ -61,9 +61,9 @@ export default function Login() {
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Access Key</label>
-                <Input
+                <Input 
                   type="password"
-                  value={password}
+                  value={password} 
                   onChange={(e) => setPassword(e.target.value)}
                   className="bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-600 h-12 rounded-xl focus:ring-primary"
                   placeholder="••••••••"

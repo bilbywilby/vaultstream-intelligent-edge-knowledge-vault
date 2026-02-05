@@ -81,7 +81,7 @@ class PKFCore {
     };
     this.commits.push(newCommit);
     for (const doc of documents) {
-      if (doc.length * 2 > 500000) continue; // Limit 500KB
+      if (doc.length * 2 > 500000) continue;
       const id = ++this.blobCounter;
       this.blobs.push({ id, content: doc, commit_hash });
       this.vectors.set(id, this.mockEmbed(doc));
@@ -107,8 +107,8 @@ class PKFCore {
         id: s.id.toString(),
         text: blob?.content || "",
         score: s.score,
-        metadata: { 
-          commit_hash: blob?.commit_hash, 
+        metadata: {
+          commit_hash: blob?.commit_hash,
           message: commit?.message,
           source: 'PKF Internal'
         },
@@ -120,40 +120,65 @@ class PKFCore {
     const idx = this.commits.findIndex(c => c.hash === hash);
     if (idx !== -1) {
       this.commits[idx].is_active = 0;
-      // Filter out blobs/vectors
-      this.blobs = this.blobs.filter(b => b.commit_hash !== hash);
-      // Actual deletion of vectors belonging to these blobs
       const idsToDelete = this.blobs.filter(b => b.commit_hash === hash).map(b => b.id);
+      this.blobs = this.blobs.filter(b => b.commit_hash !== hash);
       idsToDelete.forEach(id => this.vectors.delete(id));
       return true;
     }
     return false;
   }
   public compact_vault() {
+    const initialCount = this.blobs.length;
     const activeHashes = new Set(this.commits.filter(c => c.is_active === 1).map(c => c.hash));
     this.blobs = this.blobs.filter(b => activeHashes.has(b.commit_hash));
     const activeIds = new Set(this.blobs.map(b => b.id));
     for (const id of this.vectors.keys()) {
       if (!activeIds.has(id)) this.vectors.delete(id);
     }
-    return { success: true };
+    return { success: true, pruned: initialCount - this.blobs.length };
   }
   public get_commits() {
     return this.commits;
   }
+  public export_vault() {
+    return {
+      commits: this.commits,
+      blobs: this.blobs,
+      export_date: new Date().toISOString(),
+      engine_version: "2.1.0-PKF"
+    };
+  }
 }
 const pkf = new PKFCore();
+const checkAuth = (request: Request) => {
+  const authHeader = request.headers.get('Authorization');
+  return authHeader === 'Bearer vault-token-2024';
+};
 export default {
   async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
-    const jsonHeaders = { 
+    const jsonHeaders = {
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type'
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Expose-Headers': 'Content-Disposition'
     };
     if (request.method === 'OPTIONS') return new Response(null, { headers: jsonHeaders });
+    if (url.pathname === '/api/login' && request.method === 'POST') {
+      const { username, password } = await request.json() as any;
+      if (username === 'admin' && password === 'vault-2024') {
+        return new Response(JSON.stringify({ 
+          token: 'vault-token-2024', 
+          user: { name: 'Vault Admin', role: 'admin' } 
+        }), { headers: jsonHeaders });
+      }
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: jsonHeaders });
+    }
     if (url.pathname.startsWith('/api/')) {
+      if (!checkAuth(request)) {
+        return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: jsonHeaders });
+      }
       const endpoint = url.pathname.replace('/api/', '');
       try {
         if (endpoint === 'stats') {
@@ -184,6 +209,15 @@ export default {
         }
         if (endpoint === 'admin/compact' && request.method === 'POST') {
           return new Response(JSON.stringify(pkf.compact_vault()), { headers: jsonHeaders });
+        }
+        if (endpoint === 'admin/export') {
+          const data = pkf.export_vault();
+          return new Response(JSON.stringify(data, null, 2), { 
+            headers: { 
+              ...jsonHeaders, 
+              'Content-Disposition': 'attachment; filename="vault-snapshot.json"' 
+            } 
+          });
         }
         if (endpoint.startsWith('admin/commit/') && request.method === 'DELETE') {
           const hash = endpoint.split('/').pop() || '';
