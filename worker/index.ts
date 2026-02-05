@@ -59,7 +59,7 @@ export default {
           return new Response(JSON.stringify({ 
             success: true, 
             jobId: crypto.randomUUID(),
-            processedTokens: 4500
+            processedTokens: 4500 
           }), { headers: jsonHeaders });
         } catch (e) {
           return new Response(JSON.stringify({ error: 'Invalid payload' }), { status: 400, headers: jsonHeaders });
@@ -71,8 +71,8 @@ export default {
       }
       return new Response(JSON.stringify({ error: 'Endpoint Not Found' }), { status: 404, headers: jsonHeaders });
     }
-    // Default static response for root - in a real deployment, Vite serves the build, 
-    // but the worker handles /api proxying.
+    // Static assets would normally be served here via KV-Asset-Handler or similar.
+    // In this developer environment, Vite handles the SPA, but the Worker handles the /api proxying.
     return new Response('VaultStream Worker active. API reachable at /api/*', { status: 200 });
   }
 }

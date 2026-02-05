@@ -17,7 +17,7 @@ export default function Ingest() {
   }, []);
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: { 'text/plain': ['.txt'], 'text/csv': ['.csv'] }
+    accept: { 'text/plain': ['.txt'], 'text/csv': ['.csv'], 'text/markdown': ['.md'] }
   });
   const handleIngest = async () => {
     if (!text && files.length === 0) {

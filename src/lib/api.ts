@@ -13,7 +13,7 @@ export interface SearchResult {
 }
 /**
  * API client for interacting with the VaultStream edge worker.
- * Handles both mock responses and proxy requests to the real backend.
+ * Phase 1 uses local /api/ routes handled by the Worker's mock adapter.
  */
 export const api = {
   /**
@@ -47,7 +47,7 @@ export const api = {
    */
   async ingest(data: { text?: string; files?: File[] }): Promise<{ success: boolean }> {
     try {
-      // For Phase 1, we send JSON representation to mock worker
+      // In Phase 1, we simulate ingestion metadata sending
       const res = await fetch('/api/ingest', {
         method: 'POST',
         body: JSON.stringify({
