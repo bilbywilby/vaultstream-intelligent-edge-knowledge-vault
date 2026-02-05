@@ -56,8 +56,8 @@ export default {
         try {
           const body = await request.json();
           console.log('Ingestion Triggered:', body);
-          return new Response(JSON.stringify({
-            success: true,
+          return new Response(JSON.stringify({ 
+            success: true, 
             jobId: crypto.randomUUID(),
             processedTokens: 4500
           }), { headers: jsonHeaders });
@@ -71,7 +71,8 @@ export default {
       }
       return new Response(JSON.stringify({ error: 'Endpoint Not Found' }), { status: 404, headers: jsonHeaders });
     }
-    // Default static response for root
+    // Default static response for root - in a real deployment, Vite serves the build, 
+    // but the worker handles /api proxying.
     return new Response('VaultStream Worker active. API reachable at /api/*', { status: 200 });
   }
 }

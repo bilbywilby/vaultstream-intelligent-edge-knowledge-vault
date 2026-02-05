@@ -44,30 +44,30 @@ export default function Dashboard() {
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard 
-          title="Total Documents" 
-          value={stats.documentCount.toLocaleString()} 
-          icon={Database} 
-          trend="+12.5% this month" 
-          trendUp={true} 
+        <StatCard
+          title="Total Documents"
+          value={stats.documentCount.toLocaleString()}
+          icon={Database}
+          trend="+12.5% this month"
+          trendUp={true}
         />
-        <StatCard 
-          title="Index Size" 
-          value={formatBytes(stats.indexSize)} 
-          icon={HardDrive} 
-          trend="Optimized Space" 
+        <StatCard
+          title="Index Size"
+          value={formatBytes(stats.indexSize)}
+          icon={HardDrive}
+          trend="Optimized Space"
         />
-        <StatCard 
-          title="Health Status" 
-          value={stats.health.toUpperCase()} 
-          icon={Activity} 
-          statusColor="text-emerald-500" 
+        <StatCard
+          title="Health Status"
+          value={stats.health.toUpperCase()}
+          icon={Activity}
+          statusColor="text-emerald-500"
         />
-        <StatCard 
-          title="Last Commit" 
-          value={new Date(stats.lastCommit).toLocaleTimeString()} 
-          icon={Clock} 
-          trend="Synced at edge" 
+        <StatCard
+          title="Last Commit"
+          value={new Date(stats.lastCommit).toLocaleTimeString()}
+          icon={Clock}
+          trend="Synced at edge"
         />
       </div>
       <Card className="shadow-sm border-slate-200 overflow-hidden">
@@ -86,23 +86,23 @@ export default function Dashboard() {
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={mockChartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis 
-                dataKey="name" 
-                axisLine={false} 
-                tickLine={false} 
-                tick={{ fill: '#64748b', fontSize: 12, fontWeight: 500 }} 
+              <XAxis
+                dataKey="name"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: '#64748b', fontSize: 12, fontWeight: 500 }}
               />
-              <YAxis 
-                axisLine={false} 
-                tickLine={false} 
-                tick={{ fill: '#64748b', fontSize: 12, fontWeight: 500 }} 
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: '#64748b', fontSize: 12, fontWeight: 500 }}
               />
               <Tooltip
                 cursor={{ fill: '#f8fafc' }}
-                contentStyle={{ 
-                  borderRadius: '12px', 
-                  border: '1px solid #e2e8f0', 
-                  boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' 
+                contentStyle={{
+                  borderRadius: '12px',
+                  border: '1px solid #e2e8f0',
+                  boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'
                 }}
               />
               <Bar dataKey="count" fill="#4f46e5" radius={[6, 6, 0, 0]} barSize={40}>

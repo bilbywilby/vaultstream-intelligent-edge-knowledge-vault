@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { Database, Download, RefreshCcw, ShieldAlert, Globe, Activity, HardDrive, Cpu, ChevronRight } from 'lucide-react';
+import { Database, Download, RefreshCcw, ShieldAlert, Globe, Activity, Cpu, ChevronRight } from 'lucide-react';
 export default function Admin() {
   const [backendUrl, setBackendUrl] = useState(localStorage.getItem('vault_backend_url') || 'http://localhost:8000');
   const handleAction = (action: string) => {
