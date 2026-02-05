@@ -51,8 +51,8 @@ export default function Search() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
-            <Button
-              type="submit"
+            <Button 
+              type="submit" 
               disabled={isSearching}
               className="absolute right-4 top-4 bottom-4 px-10 rounded-2xl bg-primary hover:bg-indigo-700 shadow-xl shadow-indigo-200 transition-all font-bold text-xl"
             >

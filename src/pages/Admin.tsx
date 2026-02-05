@@ -29,9 +29,9 @@ export default function Admin() {
   const handleCompact = async () => {
     toast.promise(api.compact(), {
       loading: 'Compacting vault...',
-      success: (res) => { 
-        loadData(); 
-        return `Optimization complete. Pruned ${res.pruned} orphaned items.`; 
+      success: (res) => {
+        loadData();
+        return `Optimization complete. Pruned ${res.pruned} orphaned items.`;
       },
       error: 'Failed to compact'
     });
@@ -95,20 +95,20 @@ export default function Admin() {
             title="Vectors Indexed" 
             value={status?.index_count || 0} 
             icon={Cpu} 
-            sub="Live Semantic Index" 
+            sub="Live Semantic Index"
             healthy={status?.index_count > 0}
           />
           <StatusCard 
             title="Raw Blobs" 
             value={status?.db_count || 0} 
             icon={Database} 
-            sub="Content Store" 
+            sub="Content Store"
             healthy={status?.db_count > 0}
           />
-          <StatusCard
-            title="System Consistency"
-            value={status?.needs_reindex ? 'SYNC REQ' : 'OPTIMIZED'}
-            icon={AlertTriangle}
+          <StatusCard 
+            title="System Consistency" 
+            value={status?.needs_reindex ? 'SYNC REQ' : 'OPTIMIZED'} 
+            icon={AlertTriangle} 
             color={status?.needs_reindex ? 'text-amber-500' : 'text-emerald-500'}
             sub={status?.needs_reindex ? 'Fragments detected' : 'Engine consistent'}
             healthy={!status?.needs_reindex}
@@ -211,7 +211,7 @@ export default function Admin() {
               <CardContent className="p-8 space-y-4">
                 <Button 
                   onClick={handleCompact} 
-                  className="w-full h-14 justify-start gap-4 bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-indigo-200 transition-all rounded-2xl" 
+                  className="w-full h-14 justify-start gap-4 bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-indigo-200 transition-all rounded-2xl"
                   variant="outline"
                 >
                   <RefreshCcw className="w-5 h-5 text-primary" />
@@ -223,7 +223,7 @@ export default function Admin() {
                 <Button 
                   onClick={handleExport}
                   disabled={exporting}
-                  className="w-full h-14 justify-start gap-4 bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-emerald-200 transition-all rounded-2xl" 
+                  className="w-full h-14 justify-start gap-4 bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-emerald-200 transition-all rounded-2xl"
                   variant="outline"
                 >
                   <Download className="w-5 h-5 text-emerald-500" />

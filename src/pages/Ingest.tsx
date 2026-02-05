@@ -69,7 +69,7 @@ export default function Ingest() {
             <p className="text-slate-500 text-lg font-medium">Expand your semantic vault with new snapshots.</p>
             <div className="flex items-center gap-3 bg-white p-2 border border-slate-200 rounded-2xl shadow-sm max-w-lg mt-6 focus-within:ring-2 focus-within:ring-primary/20 transition-all">
               <MessageSquare className="w-5 h-5 text-slate-400 ml-3" />
-              <Input
+              <Input 
                 value={commitMessage}
                 onChange={(e) => setCommitMessage(e.target.value)}
                 placeholder="Commit identifier..."
@@ -97,8 +97,8 @@ export default function Ingest() {
                    <p className="text-sm font-bold text-slate-700">{formatBytes(totalChars)}</p>
                 </div>
              </div>
-             <Button
-              onClick={handleIngest}
+             <Button 
+              onClick={handleIngest} 
               disabled={loading}
               size="lg"
               className="bg-primary hover:bg-indigo-700 shadow-2xl shadow-indigo-200 px-10 h-16 text-xl font-bold rounded-2xl transition-all"
@@ -158,7 +158,7 @@ export default function Ingest() {
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      onClick={() => setFiles([])} 
+                      onClick={() => setFiles([])}
                       className="text-red-500 hover:text-red-600 hover:bg-red-50 font-bold text-[10px] uppercase tracking-widest gap-2"
                     >
                       <Trash2 className="w-3 h-3" /> Clear All

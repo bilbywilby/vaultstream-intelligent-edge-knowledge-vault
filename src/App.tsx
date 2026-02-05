@@ -32,9 +32,9 @@ export default function App() {
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-        <Toaster
-          position="bottom-right"
-          richColors
+        <Toaster 
+          position="bottom-right" 
+          richColors 
           expand={true}
           theme="light"
           toastOptions={{

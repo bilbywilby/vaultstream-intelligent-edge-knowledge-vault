@@ -168,9 +168,9 @@ export default {
     if (url.pathname === '/api/login' && request.method === 'POST') {
       const { username, password } = await request.json() as any;
       if (username === 'admin' && password === 'vault-2024') {
-        return new Response(JSON.stringify({ 
-          token: 'vault-token-2024', 
-          user: { name: 'Vault Admin', role: 'admin' } 
+        return new Response(JSON.stringify({
+          token: 'vault-token-2024',
+          user: { name: 'Vault Admin', role: 'admin' }
         }), { headers: jsonHeaders });
       }
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: jsonHeaders });
@@ -212,11 +212,11 @@ export default {
         }
         if (endpoint === 'admin/export') {
           const data = pkf.export_vault();
-          return new Response(JSON.stringify(data, null, 2), { 
-            headers: { 
-              ...jsonHeaders, 
-              'Content-Disposition': 'attachment; filename="vault-snapshot.json"' 
-            } 
+          return new Response(JSON.stringify(data, null, 2), {
+            headers: {
+              ...jsonHeaders,
+              'Content-Disposition': 'attachment; filename="vault-snapshot.json"'
+            }
           });
         }
         if (endpoint.startsWith('admin/commit/') && request.method === 'DELETE') {
