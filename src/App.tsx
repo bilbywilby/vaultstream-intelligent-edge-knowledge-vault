@@ -19,10 +19,10 @@ export default function App() {
             <Route path="/admin" element={<Admin />} />
           </Route>
         </Routes>
-        <Toaster
-          position="bottom-right"
-          richColors
-          expand={true}
+        <Toaster 
+          position="bottom-right" 
+          richColors 
+          expand={true} 
           theme="light"
           toastOptions={{
             style: {

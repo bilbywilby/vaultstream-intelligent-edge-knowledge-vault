@@ -10,9 +10,9 @@ export default {
       const endpoint = url.pathname.replace('/api/', '');
       // Simulate network latency
       await new Promise(r => setTimeout(r, 600));
-      const jsonHeaders = {
+      const jsonHeaders = { 
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
+        'Access-Control-Allow-Origin': '*' 
       };
       // MOCK STATS
       if (endpoint === 'stats') {
@@ -59,7 +59,7 @@ export default {
           return new Response(JSON.stringify({ 
             success: true, 
             jobId: crypto.randomUUID(),
-            processedTokens: 4500 
+            processedTokens: 4500
           }), { headers: jsonHeaders });
         } catch (e) {
           return new Response(JSON.stringify({ error: 'Invalid payload' }), { status: 400, headers: jsonHeaders });
