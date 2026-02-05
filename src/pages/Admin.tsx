@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { Database, Download, RefreshCcw, ShieldAlert, Globe, Activity, HardDrive, Cpu } from 'lucide-react';
+import { Database, Download, RefreshCcw, ShieldAlert, Globe, Activity, HardDrive, Cpu, ChevronRight } from 'lucide-react';
 export default function Admin() {
   const [backendUrl, setBackendUrl] = useState(localStorage.getItem('vault_backend_url') || 'http://localhost:8000');
   const handleAction = (action: string) => {
@@ -72,14 +72,14 @@ export default function Admin() {
           <CardContent className="space-y-4 pt-6">
             <Button className="w-full h-14 justify-between gap-4 bg-slate-50 hover:bg-slate-100 border-slate-100 text-slate-700 font-bold rounded-2xl" variant="outline" onClick={() => handleAction('Export CSV')}>
               <div className="flex items-center gap-3">
-                <RefreshCcw className="w-5 h-5 text-slate-400" /> 
+                <RefreshCcw className="w-5 h-5 text-slate-400" />
                 <span>Export Primary Index (CSV)</span>
               </div>
               <ChevronRight className="w-4 h-4 text-slate-300" />
             </Button>
             <Button className="w-full h-14 justify-between gap-4 bg-slate-50 hover:bg-slate-100 border-slate-100 text-slate-700 font-bold rounded-2xl" variant="outline" onClick={() => handleAction('Backup Download')}>
               <div className="flex items-center gap-3">
-                <ShieldAlert className="w-5 h-5 text-slate-400" /> 
+                <ShieldAlert className="w-5 h-5 text-slate-400" />
                 <span>Download Vector Snapshot</span>
               </div>
               <ChevronRight className="w-4 h-4 text-slate-300" />
@@ -105,11 +105,11 @@ export default function Admin() {
                 <Activity className="w-3.5 h-3.5 text-emerald-500" />
               </label>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Input 
-                  value={backendUrl} 
+                <Input
+                  value={backendUrl}
                   onChange={(e) => setBackendUrl(e.target.value)}
-                  placeholder="https://your-api.com" 
-                  className="flex-1 h-14 px-6 text-lg bg-slate-50 border-slate-200 rounded-2xl font-medium focus:ring-primary focus:bg-white transition-all" 
+                  placeholder="https://your-api.com"
+                  className="flex-1 h-14 px-6 text-lg bg-slate-50 border-slate-200 rounded-2xl font-medium focus:ring-primary focus:bg-white transition-all"
                 />
                 <Button onClick={saveSettings} className="h-14 px-10 bg-primary hover:bg-indigo-700 font-bold text-lg rounded-2xl shadow-lg shadow-indigo-100">Update Cluster</Button>
               </div>

@@ -11,7 +11,7 @@ export default {
       // Simulate network latency
       await new Promise(r => setTimeout(r, 600));
       // HEADERS
-      const jsonHeaders = { 
+      const jsonHeaders = {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*'
       };
@@ -56,8 +56,8 @@ export default {
       if (endpoint === 'ingest' && request.method === 'POST') {
         const body = await request.json();
         console.log('Ingestion Triggered:', body);
-        return new Response(JSON.stringify({ 
-          success: true, 
+        return new Response(JSON.stringify({
+          success: true,
           jobId: crypto.randomUUID(),
           processedTokens: 4500
         }), { headers: jsonHeaders });

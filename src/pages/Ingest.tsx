@@ -15,7 +15,7 @@ export default function Ingest() {
     setFiles(prev => [...prev, ...acceptedFiles]);
     toast.success(`${acceptedFiles.length} file(s) staged for ingestion.`);
   }, []);
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({ 
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: { 'text/plain': ['.txt'], 'text/csv': ['.csv'] }
   });
@@ -46,10 +46,10 @@ export default function Ingest() {
           <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Ingest Knowledge</h1>
           <p className="text-slate-500 mt-2 text-lg">Power your semantic search by adding new source material.</p>
         </div>
-        <Button 
-          onClick={handleIngest} 
-          disabled={loading} 
-          size="lg" 
+        <Button
+          onClick={handleIngest}
+          disabled={loading}
+          size="lg"
           className="bg-primary hover:bg-indigo-700 shadow-lg shadow-indigo-100 px-8 h-14 text-lg font-bold transition-all"
         >
           {loading ? (

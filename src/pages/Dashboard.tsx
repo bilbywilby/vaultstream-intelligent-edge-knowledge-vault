@@ -94,7 +94,7 @@ function StatCard({ title, value, icon: Icon, trend, trendUp, statusColor }: any
         <div className={cn("text-3xl font-extrabold tracking-tight", statusColor || "text-slate-900")}>{value}</div>
         {trend && (
           <p className={cn("text-xs mt-2 font-bold", trendUp ? "text-emerald-600" : "text-slate-500")}>
-            {trendUp && "��� "}{trend}
+            {trendUp && "↑ "}{trend}
           </p>
         )}
       </CardContent>
