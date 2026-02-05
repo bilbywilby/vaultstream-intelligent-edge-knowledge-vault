@@ -16,14 +16,16 @@ const mockChartData = [
 export default function Dashboard() {
   const [stats, setStats] = useState<VaultStats | null>(null);
   useEffect(() => {
-    api.getStats().then(setStats).catch(console.error);
+    api.getStats()
+      .then(setStats)
+      .catch(err => console.error('Dashboard Stats Error:', err));
   }, []);
   if (!stats) {
     return (
       <div className="space-y-8 animate-pulse">
         <div className="h-20 bg-slate-200 rounded-xl w-1/3" />
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          {[1,2,3,4].map(i => <div key={i} className="h-32 bg-slate-200 rounded-xl" />)}
+          {[1, 2, 3, 4].map(i => <div key={i} className="h-32 bg-slate-200 rounded-xl" />)}
         </div>
         <div className="h-80 bg-slate-200 rounded-xl" />
       </div>
@@ -42,10 +44,31 @@ export default function Dashboard() {
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="Total Documents" value={stats.documentCount.toLocaleString()} icon={Database} trend="+12.5% this month" trendUp={true} />
-        <StatCard title="Index Size" value={formatBytes(stats.indexSize)} icon={HardDrive} trend="Optimized Space" />
-        <StatCard title="Health Status" value={stats.health.toUpperCase()} icon={Activity} statusColor="text-emerald-500" />
-        <StatCard title="Last Commit" value={new Date(stats.lastCommit).toLocaleTimeString()} icon={Clock} trend="Synced at edge" />
+        <StatCard 
+          title="Total Documents" 
+          value={stats.documentCount.toLocaleString()} 
+          icon={Database} 
+          trend="+12.5% this month" 
+          trendUp={true} 
+        />
+        <StatCard 
+          title="Index Size" 
+          value={formatBytes(stats.indexSize)} 
+          icon={HardDrive} 
+          trend="Optimized Space" 
+        />
+        <StatCard 
+          title="Health Status" 
+          value={stats.health.toUpperCase()} 
+          icon={Activity} 
+          statusColor="text-emerald-500" 
+        />
+        <StatCard 
+          title="Last Commit" 
+          value={new Date(stats.lastCommit).toLocaleTimeString()} 
+          icon={Clock} 
+          trend="Synced at edge" 
+        />
       </div>
       <Card className="shadow-sm border-slate-200 overflow-hidden">
         <CardHeader className="bg-white border-b border-slate-50 pb-4">
@@ -63,14 +86,27 @@ export default function Dashboard() {
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={mockChartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12, fontWeight: 500 }} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12, fontWeight: 500 }} />
+              <XAxis 
+                dataKey="name" 
+                axisLine={false} 
+                tickLine={false} 
+                tick={{ fill: '#64748b', fontSize: 12, fontWeight: 500 }} 
+              />
+              <YAxis 
+                axisLine={false} 
+                tickLine={false} 
+                tick={{ fill: '#64748b', fontSize: 12, fontWeight: 500 }} 
+              />
               <Tooltip
                 cursor={{ fill: '#f8fafc' }}
-                contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                contentStyle={{ 
+                  borderRadius: '12px', 
+                  border: '1px solid #e2e8f0', 
+                  boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' 
+                }}
               />
               <Bar dataKey="count" fill="#4f46e5" radius={[6, 6, 0, 0]} barSize={40}>
-                 {mockChartData.map((entry, index) => (
+                 {mockChartData.map((_entry, index) => (
                     <Cell key={`cell-${index}`} fill={index === mockChartData.length - 1 ? '#4338ca' : '#4f46e5'} />
                  ))}
               </Bar>
@@ -81,7 +117,15 @@ export default function Dashboard() {
     </div>
   );
 }
-function StatCard({ title, value, icon: Icon, trend, trendUp, statusColor }: any) {
+interface StatCardProps {
+  title: string;
+  value: string;
+  icon: React.ElementType;
+  trend?: string;
+  trendUp?: boolean;
+  statusColor?: string;
+}
+function StatCard({ title, value, icon: Icon, trend, trendUp, statusColor }: StatCardProps) {
   return (
     <Card className="border-slate-200 hover:shadow-md transition-shadow duration-300">
       <CardHeader className="flex flex-row items-center justify-between pb-3">

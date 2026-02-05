@@ -10,7 +10,6 @@ export default {
       const endpoint = url.pathname.replace('/api/', '');
       // Simulate network latency
       await new Promise(r => setTimeout(r, 600));
-      // HEADERS
       const jsonHeaders = {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*'
@@ -54,13 +53,17 @@ export default {
       }
       // MOCK INGEST
       if (endpoint === 'ingest' && request.method === 'POST') {
-        const body = await request.json();
-        console.log('Ingestion Triggered:', body);
-        return new Response(JSON.stringify({
-          success: true,
-          jobId: crypto.randomUUID(),
-          processedTokens: 4500
-        }), { headers: jsonHeaders });
+        try {
+          const body = await request.json();
+          console.log('Ingestion Triggered:', body);
+          return new Response(JSON.stringify({
+            success: true,
+            jobId: crypto.randomUUID(),
+            processedTokens: 4500
+          }), { headers: jsonHeaders });
+        } catch (e) {
+          return new Response(JSON.stringify({ error: 'Invalid payload' }), { status: 400, headers: jsonHeaders });
+        }
       }
       // MOCK ADMIN
       if (endpoint.startsWith('admin/')) {
@@ -68,8 +71,7 @@ export default {
       }
       return new Response(JSON.stringify({ error: 'Endpoint Not Found' }), { status: 404, headers: jsonHeaders });
     }
-    // Static Asset Handling (In production, Vite or KV serves these)
-    // For the purpose of the preview, we'll return a basic status message if not found
+    // Default static response for root
     return new Response('VaultStream Worker active. API reachable at /api/*', { status: 200 });
   }
 }

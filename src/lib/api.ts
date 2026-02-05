@@ -47,7 +47,7 @@ export const api = {
    */
   async ingest(data: { text?: string; files?: File[] }): Promise<{ success: boolean }> {
     try {
-      // For Phase 1, we send JSON. Real production would use FormData for large files.
+      // For Phase 1, we send JSON representation to mock worker
       const res = await fetch('/api/ingest', {
         method: 'POST',
         body: JSON.stringify({

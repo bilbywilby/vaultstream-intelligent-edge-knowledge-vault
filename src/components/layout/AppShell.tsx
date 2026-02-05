@@ -90,11 +90,11 @@ export function AppShell() {
              </Sheet>
           </div>
         </header>
-        <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8">
+        <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8">
           <div className="py-8 md:py-10 lg:py-12">
             <Outlet />
           </div>
-        </div>
+        </main>
       </div>
     </div>
   );
