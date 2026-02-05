@@ -11,70 +11,56 @@ export interface SearchResult {
   metadata: Record<string, any>;
   timestamp: string;
 }
-/**
- * API client for interacting with the VaultStream edge worker.
- * Phase 1 uses local /api/ routes handled by the Worker's mock adapter.
- */
+export interface PKFCommit {
+  hash: string;
+  parent_hash: string;
+  message: string;
+  timestamp: string;
+  is_active: number;
+}
 export const api = {
-  /**
-   * Fetch current vault metrics
-   */
   async getStats(): Promise<VaultStats> {
-    try {
-      const res = await fetch('/api/stats');
-      if (!res.ok) throw new Error('Failed to fetch stats');
-      return await res.json();
-    } catch (error) {
-      console.error('API Error [getStats]:', error);
-      throw error;
-    }
+    const res = await fetch('/api/stats');
+    if (!res.ok) throw new Error('Failed to fetch stats');
+    return res.json();
   },
-  /**
-   * Perform a semantic search query
-   */
-  async search(query: string): Promise<SearchResult[]> {
-    try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
-      if (!res.ok) throw new Error('Search failed');
-      return await res.json();
-    } catch (error) {
-      console.error('API Error [search]:', error);
-      throw error;
-    }
+  async search(query: string, top_k = 5): Promise<SearchResult[]> {
+    const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&top_k=${top_k}`);
+    if (!res.ok) throw new Error('Search failed');
+    return res.json();
   },
-  /**
-   * Ingest text or files into the vault
-   */
-  async ingest(data: { text?: string; files?: File[] }): Promise<{ success: boolean }> {
-    try {
-      // In Phase 1, we simulate ingestion metadata sending
-      const res = await fetch('/api/ingest', {
-        method: 'POST',
-        body: JSON.stringify({
-          text: data.text,
-          fileCount: data.files?.length || 0,
-          fileNames: data.files?.map(f => f.name) || []
-        }),
-        headers: { 'Content-Type': 'application/json' }
-      });
-      if (!res.ok) throw new Error('Ingestion failed');
-      return await res.json();
-    } catch (error) {
-      console.error('API Error [ingest]:', error);
-      throw error;
-    }
+  async ingest(data: { message: string; documents: string[] }): Promise<{ commit_hash: string; count: number }> {
+    const res = await fetch('/api/ingest', {
+      method: 'POST',
+      body: JSON.stringify(data),
+      headers: { 'Content-Type': 'application/json' }
+    });
+    if (!res.ok) throw new Error('Ingestion failed');
+    return res.json();
   },
-  /**
-   * Triggers vault maintenance actions
-   */
+  async getAdminStatus(): Promise<any> {
+    const res = await fetch('/api/admin/status');
+    if (!res.ok) throw new Error('Status fetch failed');
+    return res.json();
+  },
+  async getCommits(): Promise<PKFCommit[]> {
+    const res = await fetch('/api/admin/commits');
+    if (!res.ok) throw new Error('Commits fetch failed');
+    return res.json();
+  },
+  async deleteCommit(hash: string): Promise<{ success: boolean }> {
+    const res = await fetch(`/api/admin/commit/${hash}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Delete failed');
+    return res.json();
+  },
+  async compact(): Promise<{ success: boolean }> {
+    const res = await fetch('/api/admin/compact', { method: 'POST' });
+    if (!res.ok) throw new Error('Compaction failed');
+    return res.json();
+  },
   async maintenance(action: string): Promise<{ success: boolean }> {
-    try {
-      const res = await fetch(`/api/admin/${action}`, { method: 'POST' });
-      if (!res.ok) throw new Error('Maintenance action failed');
-      return await res.json();
-    } catch (error) {
-      console.error('API Error [maintenance]:', error);
-      throw error;
-    }
+    const res = await fetch(`/api/admin/${action}`, { method: 'POST' });
+    if (!res.ok) throw new Error('Maintenance action failed');
+    return res.json();
   }
 };

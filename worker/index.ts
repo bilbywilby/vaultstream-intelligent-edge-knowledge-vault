@@ -1,78 +1,200 @@
 /**
- * VaultStream Cloudflare Edge Worker
- * Handles API Routing, Authentication (Mock), and Gateway functionality.
+ * VaultStream Cloudflare Edge Worker - PKF Engine implementation
  */
+interface PKFCommit {
+  hash: string;
+  parent_hash: string;
+  message: string;
+  timestamp: string;
+  is_active: number;
+}
+interface PKFBlob {
+  id: number;
+  content: string;
+  commit_hash: string;
+}
+class PKFCore {
+  private commits: PKFCommit[] = [];
+  private blobs: PKFBlob[] = [];
+  private vectors: Map<number, Float32Array> = new Map();
+  private dim = 384;
+  private blobCounter = 0;
+  constructor() {
+    this._initialize_infrastructure();
+  }
+  private _initialize_infrastructure() {
+    this.commits = [];
+    this.blobs = [];
+    this.vectors.clear();
+    this.blobCounter = 0;
+  }
+  private async _generate_commit_hash(content: string): Promise<string> {
+    const msgUint8 = new TextEncoder().encode(content + Date.now().toString());
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
+  }
+  private mockEmbed(text: string): Float32Array {
+    const vec = new Float32Array(this.dim);
+    let hash = 0;
+    for (let i = 0; i < text.length; i++) {
+      hash = (hash << 5) - hash + text.charCodeAt(i);
+      hash |= 0;
+    }
+    let sumSq = 0;
+    for (let i = 0; i < this.dim; i++) {
+      const val = Math.sin(hash + i * 0.1);
+      vec[i] = val;
+      sumSq += val * val;
+    }
+    const norm = Math.sqrt(sumSq);
+    for (let i = 0; i < this.dim; i++) {
+      vec[i] /= norm;
+    }
+    return vec;
+  }
+  public get_status() {
+    const latest = this._get_latest_hash();
+    return {
+      index_exists: this.vectors.size > 0,
+      index_count: this.vectors.size,
+      db_count: this.blobs.length,
+      max_blob_id: this.blobCounter,
+      needs_reindex: this.vectors.size !== this.blobs.length,
+      last_commit: latest,
+      commit_count: this.commits.length
+    };
+  }
+  private _get_latest_hash(): string {
+    const active = this.commits.filter(c => c.is_active === 1);
+    return active.length > 0 ? active[active.length - 1].hash : "0000000000000000";
+  }
+  public async save_snapshot(message: string, documents: string[]) {
+    const parent_hash = this._get_latest_hash();
+    const commit_hash = await this._generate_commit_hash(message + documents.join(''));
+    const newCommit: PKFCommit = {
+      hash: commit_hash,
+      parent_hash,
+      message,
+      timestamp: new Date().toISOString(),
+      is_active: 1
+    };
+    this.commits.push(newCommit);
+    for (const doc of documents) {
+      if (doc.length * 2 > 500000) continue; // Limit 500KB
+      const id = ++this.blobCounter;
+      this.blobs.push({ id, content: doc, commit_hash });
+      this.vectors.set(id, this.mockEmbed(doc));
+    }
+    return { commit_hash, count: documents.length };
+  }
+  public search(query: string, top_k = 5) {
+    const qVec = this.mockEmbed(query);
+    const scores: { id: number; score: number }[] = [];
+    for (const [id, vVec] of this.vectors) {
+      let dot = 0;
+      for (let i = 0; i < this.dim; i++) {
+        dot += qVec[i] * vVec[i];
+      }
+      scores.push({ id, score: dot });
+    }
+    scores.sort((a, b) => b.score - a.score);
+    const top = scores.slice(0, top_k);
+    return top.map(s => {
+      const blob = this.blobs.find(b => b.id === s.id);
+      const commit = this.commits.find(c => c.hash === blob?.commit_hash);
+      return {
+        id: s.id.toString(),
+        text: blob?.content || "",
+        score: s.score,
+        metadata: { 
+          commit_hash: blob?.commit_hash, 
+          message: commit?.message,
+          source: 'PKF Internal'
+        },
+        timestamp: commit?.timestamp || new Date().toISOString()
+      };
+    });
+  }
+  public delete_commit(hash: string) {
+    const idx = this.commits.findIndex(c => c.hash === hash);
+    if (idx !== -1) {
+      this.commits[idx].is_active = 0;
+      // Filter out blobs/vectors
+      this.blobs = this.blobs.filter(b => b.commit_hash !== hash);
+      // Actual deletion of vectors belonging to these blobs
+      const idsToDelete = this.blobs.filter(b => b.commit_hash === hash).map(b => b.id);
+      idsToDelete.forEach(id => this.vectors.delete(id));
+      return true;
+    }
+    return false;
+  }
+  public compact_vault() {
+    const activeHashes = new Set(this.commits.filter(c => c.is_active === 1).map(c => c.hash));
+    this.blobs = this.blobs.filter(b => activeHashes.has(b.commit_hash));
+    const activeIds = new Set(this.blobs.map(b => b.id));
+    for (const id of this.vectors.keys()) {
+      if (!activeIds.has(id)) this.vectors.delete(id);
+    }
+    return { success: true };
+  }
+  public get_commits() {
+    return this.commits;
+  }
+}
+const pkf = new PKFCore();
 export default {
   async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
-    // API Route Handling
+    const jsonHeaders = { 
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type'
+    };
+    if (request.method === 'OPTIONS') return new Response(null, { headers: jsonHeaders });
     if (url.pathname.startsWith('/api/')) {
       const endpoint = url.pathname.replace('/api/', '');
-      // Simulate network latency
-      await new Promise(r => setTimeout(r, 600));
-      const jsonHeaders = { 
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*' 
-      };
-      // MOCK STATS
-      if (endpoint === 'stats') {
-        return new Response(JSON.stringify({
-          documentCount: 14250,
-          indexSize: 512 * 1024 * 1024, // 512 MB
-          lastCommit: new Date().toISOString(),
-          health: 'healthy'
-        }), { headers: jsonHeaders });
-      }
-      // MOCK SEARCH
-      if (endpoint === 'search') {
-        const query = url.searchParams.get('q') || '';
-        const mockResults = [
-          {
-            id: crypto.randomUUID(),
-            text: `High-relevance context for "${query}": Analysis indicates that Q3 market trends were heavily influenced by the rise in localized computing power at the network edge. This led to a 14% increase in processing efficiency across all surveyed nodes.`,
-            score: 0.965,
-            metadata: { source: 'market_analysis_v2.txt', page: 42, section: 'Network Trends' },
-            timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString()
-          },
-          {
-            id: crypto.randomUUID(),
-            text: `Relevant insight: The PKF-Core implementation successfully reduced vector retrieval latency by offloading primary FAISS indexing to distributed workers, as noted in the recent operational audit.`,
-            score: 0.842,
-            metadata: { source: 'ops_audit_report.csv', category: 'Infrastructure' },
-            timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString()
-          },
-          {
-            id: crypto.randomUUID(),
-            text: `Secondary Match: Preliminary data from the user study suggests that semantic search interfaces outperform keyword-based search by a factor of 2.5x when querying complex domain knowledge.`,
-            score: 0.719,
-            metadata: { source: 'ux_study.pdf', author: 'Research Team' },
-            timestamp: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString()
-          }
-        ];
-        return new Response(JSON.stringify(mockResults), { headers: jsonHeaders });
-      }
-      // MOCK INGEST
-      if (endpoint === 'ingest' && request.method === 'POST') {
-        try {
-          const body = await request.json();
-          console.log('Ingestion Triggered:', body);
-          return new Response(JSON.stringify({ 
-            success: true, 
-            jobId: crypto.randomUUID(),
-            processedTokens: 4500
+      try {
+        if (endpoint === 'stats') {
+          const status = pkf.get_status();
+          return new Response(JSON.stringify({
+            documentCount: status.db_count,
+            indexSize: status.index_count * 384 * 4,
+            lastCommit: status.last_commit,
+            health: status.index_count > 0 ? 'healthy' : 'offline'
           }), { headers: jsonHeaders });
-        } catch (e) {
-          return new Response(JSON.stringify({ error: 'Invalid payload' }), { status: 400, headers: jsonHeaders });
         }
+        if (endpoint === 'search') {
+          const query = url.searchParams.get('q') || '';
+          const topK = parseInt(url.searchParams.get('top_k') || '5');
+          const results = pkf.search(query, topK);
+          return new Response(JSON.stringify(results), { headers: jsonHeaders });
+        }
+        if (endpoint === 'ingest' && request.method === 'POST') {
+          const body = await request.json() as { message: string, documents: string[] };
+          const result = await pkf.save_snapshot(body.message || "User Ingest", body.documents || []);
+          return new Response(JSON.stringify(result), { headers: jsonHeaders });
+        }
+        if (endpoint === 'admin/status') {
+          return new Response(JSON.stringify(pkf.get_status()), { headers: jsonHeaders });
+        }
+        if (endpoint === 'admin/commits') {
+          return new Response(JSON.stringify(pkf.get_commits()), { headers: jsonHeaders });
+        }
+        if (endpoint === 'admin/compact' && request.method === 'POST') {
+          return new Response(JSON.stringify(pkf.compact_vault()), { headers: jsonHeaders });
+        }
+        if (endpoint.startsWith('admin/commit/') && request.method === 'DELETE') {
+          const hash = endpoint.split('/').pop() || '';
+          const success = pkf.delete_commit(hash);
+          return new Response(JSON.stringify({ success }), { headers: jsonHeaders });
+        }
+        return new Response(JSON.stringify({ error: 'Not Found' }), { status: 404, headers: jsonHeaders });
+      } catch (err: any) {
+        return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: jsonHeaders });
       }
-      // MOCK ADMIN
-      if (endpoint.startsWith('admin/')) {
-        return new Response(JSON.stringify({ success: true }), { headers: jsonHeaders });
-      }
-      return new Response(JSON.stringify({ error: 'Endpoint Not Found' }), { status: 404, headers: jsonHeaders });
     }
-    // Static assets would normally be served here via KV-Asset-Handler or similar.
-    // In this developer environment, Vite handles the SPA, but the Worker handles the /api proxying.
-    return new Response('VaultStream Worker active. API reachable at /api/*', { status: 200 });
+    return new Response('VaultStream PKF Engine Active', { status: 200 });
   }
 }

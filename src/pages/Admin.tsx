@@ -1,131 +1,149 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { Database, Download, RefreshCcw, ShieldAlert, Globe, Activity, Cpu, ChevronRight } from 'lucide-react';
-import { api } from '@/lib/api';
+import { Database, RefreshCcw, Cpu, Trash2, History, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { api, PKFCommit } from '@/lib/api';
+import { formatDate } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 export default function Admin() {
-  const [backendUrl, setBackendUrl] = useState(localStorage.getItem('vault_backend_url') || 'http://localhost:8000');
-  const handleAction = async (action: string) => {
-    toast.promise(api.maintenance(action.toLowerCase().replace(/\s/g, '_')), {
-      loading: `Initializing ${action}...`,
-      success: `${action} complete.`,
-      error: `Failed to ${action}.`
+  const [status, setStatus] = useState<any>(null);
+  const [commits, setCommits] = useState<PKFCommit[]>([]);
+  const [loading, setLoading] = useState(true);
+  const loadData = async () => {
+    try {
+      const [s, c] = await Promise.all([api.getAdminStatus(), api.getCommits()]);
+      setStatus(s);
+      setCommits(c.reverse());
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    loadData();
+  }, []);
+  const handleCompact = async () => {
+    toast.promise(api.compact(), {
+      loading: 'Compacting vault...',
+      success: () => { loadData(); return 'Optimization complete'; },
+      error: 'Failed to compact'
     });
   };
-  const saveSettings = () => {
-    localStorage.setItem('vault_backend_url', backendUrl);
-    toast.success('Connection settings persisted.');
+  const handleDelete = async (hash: string) => {
+    if (!confirm('Are you sure? This will remove all associated vectors.')) return;
+    try {
+      await api.deleteCommit(hash);
+      toast.success('Commit removed');
+      loadData();
+    } catch (err) {
+      toast.error('Delete failed');
+    }
   };
+  if (loading) return <div className="p-12 text-center animate-pulse">Initializing PKF Console...</div>;
   return (
-    <div className="max-w-5xl mx-auto space-y-10 animate-fade-in">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-slate-100 pb-8">
+    <div className="max-w-7xl mx-auto space-y-10 animate-fade-in px-4 sm:px-6 lg:px-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b pb-8">
         <div>
           <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Admin Console</h1>
-          <p className="text-slate-500 mt-2 text-lg font-medium">Advanced vault maintenance and configuration gateway.</p>
+          <p className="text-slate-500 mt-2 text-lg">Manage edge snapshots and system health.</p>
         </div>
-        <div className="flex gap-2">
-           <div className="px-4 py-2 bg-slate-900 text-white rounded-xl flex items-center gap-2">
-              <Cpu className="w-4 h-4 text-indigo-400" />
-              <span className="text-xs font-bold">V1.4.2-STABLE</span>
-           </div>
+        <div className="flex items-center gap-3">
+           <Badge variant="outline" className="px-4 py-1.5 border-slate-200 bg-white">
+             <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 mr-2" />
+             V2.1.0-PKF
+           </Badge>
+           <Button variant="outline" size="sm" onClick={loadData} className="rounded-full">
+             <RefreshCcw className="w-4 h-4" />
+           </Button>
         </div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <Card className="border-slate-200 shadow-sm overflow-hidden group">
-          <CardHeader className="bg-slate-50/50 border-b border-slate-100">
-            <CardTitle className="flex items-center gap-3 text-xl">
-              <div className="p-2 bg-white rounded-lg shadow-sm border border-slate-100">
-                <Database className="w-5 h-5 text-primary" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <StatusCard title="Vectors Indexed" value={status?.index_count || 0} icon={Cpu} sub="Live Search Index" />
+        <StatusCard title="Database Blobs" value={status?.db_count || 0} icon={Database} sub="Raw Content Store" />
+        <StatusCard 
+          title="Engine Health" 
+          value={status?.needs_reindex ? 'SYNC REQ' : 'OPTIMIZED'} 
+          icon={AlertTriangle} 
+          color={status?.needs_reindex ? 'text-amber-500' : 'text-emerald-500'}
+          sub={status?.needs_reindex ? 'Partial fragments detected' : 'Fully consistent'}
+        />
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-6">
+          <Card className="border-slate-200 shadow-sm">
+            <CardHeader className="bg-slate-50/50 border-b">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <History className="w-5 h-5 text-primary" /> Snapshot History
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-slate-50 border-b text-slate-400 font-bold uppercase tracking-wider">
+                      <th className="text-left p-4">Hash</th>
+                      <th className="text-left p-4">Message</th>
+                      <th className="text-left p-4">Created</th>
+                      <th className="text-right p-4">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {commits.map((c) => (
+                      <tr key={c.hash} className={cn("border-b hover:bg-slate-50/50 transition-colors", c.is_active === 0 && "opacity-40")}>
+                        <td className="p-4 font-mono text-xs text-primary">{c.hash.slice(0, 8)}</td>
+                        <td className="p-4 font-semibold text-slate-700">{c.message}</td>
+                        <td className="p-4 text-slate-500">{formatDate(c.timestamp)}</td>
+                        <td className="p-4 text-right">
+                          {c.is_active === 1 && (
+                            <Button variant="ghost" size="icon" onClick={() => handleDelete(c.hash)} className="hover:text-red-500 rounded-full h-8 w-8">
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {commits.length === 0 && <div className="p-12 text-center text-slate-400">No snapshots recorded yet.</div>}
               </div>
-              Index Maintenance
-            </CardTitle>
-            <CardDescription className="font-medium text-slate-500">Optimize and clean up the high-dimensional vector space.</CardDescription>
+            </CardContent>
+          </Card>
+        </div>
+        <Card className="border-slate-200 self-start">
+          <CardHeader className="bg-slate-50/50 border-b">
+            <CardTitle className="text-lg">Maintenance</CardTitle>
+            <CardDescription>Optimize internal indices.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4 pt-6">
-            <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 group-hover:border-indigo-100 transition-colors">
-              <div className="text-sm">
-                <p className="font-bold text-slate-800">Compact Vault</p>
-                <p className="text-xs text-slate-500 mt-0.5">Removes fragmented segments and merges index blocks.</p>
-              </div>
-              <Button size="sm" onClick={() => handleAction('Vault Compaction')} className="font-bold rounded-lg px-4 bg-white border-slate-200 text-slate-700 hover:bg-slate-50">Execute</Button>
-            </div>
-            <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 group-hover:border-indigo-100 transition-colors">
-              <div className="text-sm">
-                <p className="font-bold text-slate-800">Rebuild FAISS Index</p>
-                <p className="text-xs text-slate-500 mt-0.5">Triggers a full GPU-accelerated re-index of all knowledge.</p>
-              </div>
-              <Button size="sm" variant="outline" onClick={() => handleAction('Index Rebuild')} className="font-bold rounded-lg px-4">Rebuild</Button>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-slate-200 shadow-sm overflow-hidden group">
-          <CardHeader className="bg-slate-50/50 border-b border-slate-100">
-            <CardTitle className="flex items-center gap-3 text-xl">
-              <div className="p-2 bg-white rounded-lg shadow-sm border border-slate-100">
-                <Download className="w-5 h-5 text-emerald-600" />
-              </div>
-              Exports & Backups
-            </CardTitle>
-            <CardDescription className="font-medium text-slate-500">Snapshot retrieval and dataset extraction tools.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4 pt-6">
-            <Button className="w-full h-14 justify-between gap-4 bg-slate-50 hover:bg-slate-100 border-slate-100 text-slate-700 font-bold rounded-2xl" variant="outline" onClick={() => handleAction('Export CSV')}>
-              <div className="flex items-center gap-3">
-                <RefreshCcw className="w-5 h-5 text-slate-400" />
-                <span>Export Primary Index (CSV)</span>
-              </div>
-              <ChevronRight className="w-4 h-4 text-slate-300" />
+          <CardContent className="p-6 space-y-4">
+            <Button onClick={handleCompact} className="w-full justify-start gap-3 bg-white border-slate-200 text-slate-700 hover:bg-slate-50" variant="outline">
+              <RefreshCcw className="w-4 h-4 text-indigo-500" />
+              Compact & Defrag
             </Button>
-            <Button className="w-full h-14 justify-between gap-4 bg-slate-50 hover:bg-slate-100 border-slate-100 text-slate-700 font-bold rounded-2xl" variant="outline" onClick={() => handleAction('Backup Download')}>
-              <div className="flex items-center gap-3">
-                <ShieldAlert className="w-5 h-5 text-slate-400" />
-                <span>Download Vector Snapshot</span>
-              </div>
-              <ChevronRight className="w-4 h-4 text-slate-300" />
+            <Button variant="outline" className="w-full justify-start gap-3 opacity-50 cursor-not-allowed">
+              <Database className="w-4 h-4 text-slate-400" />
+              Download Snapshot (v2)
             </Button>
           </CardContent>
         </Card>
       </div>
-      <Card className="border-slate-200 shadow-xl shadow-slate-200/20 overflow-hidden">
-        <CardHeader className="bg-primary/5 border-b border-primary/10">
-          <CardTitle className="flex items-center gap-3 text-xl text-slate-900">
-            <div className="p-2 bg-primary rounded-lg shadow-lg shadow-indigo-200">
-              <Globe className="w-5 h-5 text-white" />
-            </div>
-            Edge Gateway Configuration
-          </CardTitle>
-          <CardDescription className="font-medium text-slate-600">Point this client to your upstream PKF-Core service instance.</CardDescription>
-        </CardHeader>
-        <CardContent className="p-8">
-          <div className="grid gap-6">
-            <div className="space-y-3">
-              <label className="text-sm font-bold text-slate-700 uppercase tracking-widest flex items-center gap-2">
-                Service Endpoint URL
-                <Activity className="w-3.5 h-3.5 text-emerald-500" />
-              </label>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Input
-                  value={backendUrl}
-                  onChange={(e) => setBackendUrl(e.target.value)}
-                  placeholder="https://your-api.com"
-                  className="flex-1 h-14 px-6 text-lg bg-slate-50 border-slate-200 rounded-2xl font-medium focus:ring-primary focus:bg-white transition-all"
-                />
-                <Button onClick={saveSettings} className="h-14 px-10 bg-primary hover:bg-indigo-700 font-bold text-lg rounded-2xl shadow-lg shadow-indigo-100">Update Cluster</Button>
-              </div>
-            </div>
-            <div className="flex items-center gap-4 p-5 bg-indigo-50/50 rounded-2xl border border-indigo-100">
-               <div className="w-10 h-10 shrink-0 bg-white rounded-xl shadow-sm border border-indigo-100 flex items-center justify-center">
-                  <Cpu className="w-5 h-5 text-primary" />
-               </div>
-               <p className="text-sm text-indigo-700 font-medium leading-relaxed">
-                 All requests are automatically proxied through the Cloudflare Edge Worker. This ensures encrypted transit, JWT validation, and high-performance result caching.
-               </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
+  );
+}
+function StatusCard({ title, value, icon: Icon, sub, color }: any) {
+  return (
+    <Card className="border-slate-200 bg-white">
+      <CardContent className="pt-6">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{title}</span>
+          <div className="p-2 bg-slate-50 rounded-lg">
+            <Icon className="w-4 h-4 text-slate-400" />
+          </div>
+        </div>
+        <div className={cn("text-3xl font-black tracking-tight", color || "text-slate-900")}>{value}</div>
+        <p className="text-[11px] font-bold text-slate-400 mt-2 uppercase tracking-tight">{sub}</p>
+      </CardContent>
+    </Card>
   );
 }
