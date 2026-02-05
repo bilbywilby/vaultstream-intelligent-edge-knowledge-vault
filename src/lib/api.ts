@@ -11,25 +11,70 @@ export interface SearchResult {
   metadata: Record<string, any>;
   timestamp: string;
 }
+/**
+ * API client for interacting with the VaultStream edge worker.
+ * Handles both mock responses and proxy requests to the real backend.
+ */
 export const api = {
+  /**
+   * Fetch current vault metrics
+   */
   async getStats(): Promise<VaultStats> {
-    const res = await fetch('/api/stats');
-    if (!res.ok) throw new Error('Failed to fetch stats');
-    return res.json();
+    try {
+      const res = await fetch('/api/stats');
+      if (!res.ok) throw new Error('Failed to fetch stats');
+      return await res.json();
+    } catch (error) {
+      console.error('API Error [getStats]:', error);
+      throw error;
+    }
   },
+  /**
+   * Perform a semantic search query
+   */
   async search(query: string): Promise<SearchResult[]> {
-    const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
-    if (!res.ok) throw new Error('Search failed');
-    return res.json();
+    try {
+      const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+      if (!res.ok) throw new Error('Search failed');
+      return await res.json();
+    } catch (error) {
+      console.error('API Error [search]:', error);
+      throw error;
+    }
   },
+  /**
+   * Ingest text or files into the vault
+   */
   async ingest(data: { text?: string; files?: File[] }): Promise<{ success: boolean }> {
-    // In Phase 1 we simulate multipart or JSON
-    const res = await fetch('/api/ingest', {
-      method: 'POST',
-      body: JSON.stringify(data),
-      headers: { 'Content-Type': 'application/json' }
-    });
-    if (!res.ok) throw new Error('Ingestion failed');
-    return res.json();
+    try {
+      // For Phase 1, we send JSON. Real production would use FormData for large files.
+      const res = await fetch('/api/ingest', {
+        method: 'POST',
+        body: JSON.stringify({
+          text: data.text,
+          fileCount: data.files?.length || 0,
+          fileNames: data.files?.map(f => f.name) || []
+        }),
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (!res.ok) throw new Error('Ingestion failed');
+      return await res.json();
+    } catch (error) {
+      console.error('API Error [ingest]:', error);
+      throw error;
+    }
+  },
+  /**
+   * Triggers vault maintenance actions
+   */
+  async maintenance(action: string): Promise<{ success: boolean }> {
+    try {
+      const res = await fetch(`/api/admin/${action}`, { method: 'POST' });
+      if (!res.ok) throw new Error('Maintenance action failed');
+      return await res.json();
+    } catch (error) {
+      console.error('API Error [maintenance]:', error);
+      throw error;
+    }
   }
 };

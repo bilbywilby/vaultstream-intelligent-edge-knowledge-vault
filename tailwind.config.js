@@ -25,6 +25,10 @@ export default {
           DEFAULT: "#f8fafc",
           foreground: "#64748b",
         },
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
+        },
       },
       fontFamily: {
         sans: ['Inter', 'sans-serif'],

@@ -1,43 +1,75 @@
+/**
+ * VaultStream Cloudflare Edge Worker
+ * Handles API Routing, Authentication (Mock), and Gateway functionality.
+ */
 export default {
   async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
     // API Route Handling
     if (url.pathname.startsWith('/api/')) {
       const endpoint = url.pathname.replace('/api/', '');
-      // Mock Responses
+      // Simulate network latency
+      await new Promise(r => setTimeout(r, 600));
+      // HEADERS
+      const jsonHeaders = { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      };
+      // MOCK STATS
       if (endpoint === 'stats') {
         return new Response(JSON.stringify({
-          documentCount: 12450,
-          indexSize: 42 * 1024 * 1024,
+          documentCount: 14250,
+          indexSize: 512 * 1024 * 1024, // 512 MB
           lastCommit: new Date().toISOString(),
           health: 'healthy'
-        }), { headers: { 'Content-Type': 'application/json' } });
+        }), { headers: jsonHeaders });
       }
+      // MOCK SEARCH
       if (endpoint === 'search') {
         const query = url.searchParams.get('q') || '';
-        return new Response(JSON.stringify([
+        const mockResults = [
           {
             id: crypto.randomUUID(),
-            text: `Relevant insight related to "${query}": The Q4 revenue figures exceeded expectations primarily due to the expansion into European markets and strategic cost-cutting measures in logistics.`,
-            score: 0.94,
-            metadata: { source: 'report_2023.txt', page: 12 },
-            timestamp: new Date().toISOString()
+            text: `High-relevance context for "${query}": Analysis indicates that Q3 market trends were heavily influenced by the rise in localized computing power at the network edge. This led to a 14% increase in processing efficiency across all surveyed nodes.`,
+            score: 0.965,
+            metadata: { source: 'market_analysis_v2.txt', page: 42, section: 'Network Trends' },
+            timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString()
           },
           {
             id: crypto.randomUUID(),
-            text: `Contextual match: Operational efficiency improved by 18% following the implementation of the new knowledge management system at the edge.`,
-            score: 0.82,
-            metadata: { source: 'ops_audit.csv' },
-            timestamp: new Date().toISOString()
+            text: `Relevant insight: The PKF-Core implementation successfully reduced vector retrieval latency by offloading primary FAISS indexing to distributed workers, as noted in the recent operational audit.`,
+            score: 0.842,
+            metadata: { source: 'ops_audit_report.csv', category: 'Infrastructure' },
+            timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString()
+          },
+          {
+            id: crypto.randomUUID(),
+            text: `Secondary Match: Preliminary data from the user study suggests that semantic search interfaces outperform keyword-based search by a factor of 2.5x when querying complex domain knowledge.`,
+            score: 0.719,
+            metadata: { source: 'ux_study.pdf', author: 'Research Team' },
+            timestamp: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString()
           }
-        ]), { headers: { 'Content-Type': 'application/json' } });
+        ];
+        return new Response(JSON.stringify(mockResults), { headers: jsonHeaders });
       }
+      // MOCK INGEST
       if (endpoint === 'ingest' && request.method === 'POST') {
-        return new Response(JSON.stringify({ success: true }), { headers: { 'Content-Type': 'application/json' } });
+        const body = await request.json();
+        console.log('Ingestion Triggered:', body);
+        return new Response(JSON.stringify({ 
+          success: true, 
+          jobId: crypto.randomUUID(),
+          processedTokens: 4500
+        }), { headers: jsonHeaders });
       }
-      return new Response('API Endpoint Not Found', { status: 404 });
+      // MOCK ADMIN
+      if (endpoint.startsWith('admin/')) {
+        return new Response(JSON.stringify({ success: true }), { headers: jsonHeaders });
+      }
+      return new Response(JSON.stringify({ error: 'Endpoint Not Found' }), { status: 404, headers: jsonHeaders });
     }
-    // Default to a simple response for assets (Vite handles this in dev)
-    return new Response('Not Found', { status: 404 });
+    // Static Asset Handling (In production, Vite or KV serves these)
+    // For the purpose of the preview, we'll return a basic status message if not found
+    return new Response('VaultStream Worker active. API reachable at /api/*', { status: 200 });
   }
 }
